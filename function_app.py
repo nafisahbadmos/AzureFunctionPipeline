@@ -1,8 +1,8 @@
 import os
 import logging
-import azure.functions as func
 from datetime import timezone, datetime
 
+import azure.functions as func
 from azure.identity import ClientSecretCredential
 from azure.mgmt.datafactory import DataFactoryManagementClient
 from azure.storage.blob import BlobClient, ContainerClient
@@ -268,6 +268,45 @@ def process_new_blob(
     )
 
 
+def delete_target_url_folder(
+    cred,
+    target_url: str,
+    path_prefix: str,
+):
+    """
+    Delete all content of the folder in the path within storage account.
+    
+    :param cred: Credentials for access
+    :param target_url: Where to delete (URL)
+    :param path_prefix: Prefix after URL
+    """
+    # Extract info:
+    _url_target = r".blob.core.windows.net"
+    if target_url.endswith("/"):
+        target_url = target_url[:-1]
+    if path_prefix.endswith("/"):
+        path_prefix = path_prefix[:-1]
+    account_name = target_url[len(r"https://"):target_url.index(_url_target)]
+    _path_suffix_splt = target_url[target_url.index(_url_target) + len(_url_target):].split(r'/')
+    container_name = _path_suffix_splt[1]
+    if len(_path_suffix_splt) > 2:
+        path_prefix = "/".join(_path_suffix_splt[2:]) + "/" + path_prefix
+    # Construct path:
+    account_url = f"https://{account_name}.blob.core.windows.net"
+    container = ContainerClient(account_url, container_name, credential=cred)
+
+    for blob in container.list_blobs(name_starts_with=path_prefix):
+        blob_name: str = blob.name
+        if blob_name.endswith(path_prefix):
+            continue
+        try:
+            container.delete_blob(
+                blob_name, delete_snapshots="include"
+            )
+        except Exception as e:
+            logging.warning(f"error when deleting `{blob_name}`: {str(e)}.")
+
+
 @app.event_grid_trigger(arg_name="azeventgrid")
 def NewBlobCreatedAlderHey(azeventgrid: func.EventGridEvent):
     """
@@ -386,7 +425,8 @@ def CopyParquetFileFromQuantexaToSocialFinance(azeventgrid: func.EventGridEvent)
     if not blob_name.startswith(parquet_file_folder):
         logging.info(r"Wrong location of Apache Parquet file!")
         return
-
+    parquet_folder = blob_folder[len(parquet_file_folder):]
+    
     logging.info(r"Processing file.")
 
     # Source storage account
@@ -402,6 +442,8 @@ def CopyParquetFileFromQuantexaToSocialFinance(azeventgrid: func.EventGridEvent)
     )
     # Essentially a folder for creating latest files structure:
     latest_folder_prefix = os.getenv(r"QX_PARQUET_FOR_SF_DESTINATION_LATEST", "latest")
+    if latest_folder_prefix.endswith('/'):
+        latest_folder_prefix = latest_folder_prefix[:-1]
     # Vertical bar-separated list of URLs
     #   With logic: https://<storage-account>.blob.core.windows.net/<container>/<path>
     destination_paths = os.getenv(r"QX_PARQUET_FOR_SF_DESTINATION_URLS").split("|")
@@ -416,6 +458,15 @@ def CopyParquetFileFromQuantexaToSocialFinance(azeventgrid: func.EventGridEvent)
     iso_now: str = datetime.now(timezone.utc).isoformat()
     source_account_url = f"https://{storage_account}.blob.core.windows.net"
     credential = get_credential()
+    
+    # Clean target folders
+    for destination_path in destination_paths:
+        if destination_path.endswith("/"):
+            destination_path = destination_path[:-1]
+        delete_target_url_folder(credential,
+                                 destination_path, 
+                                 latest_folder_prefix + "/" + parquet_folder)
+    
     for _blob_copied in all_blobs_in_folder:
         if not str(_blob_copied).startswith(blob_folder):
             # Only blobs in a current Parquet file (which happened to be a folder)
@@ -434,7 +485,7 @@ def CopyParquetFileFromQuantexaToSocialFinance(azeventgrid: func.EventGridEvent)
                     continue
             if skip_loop:
                 continue
-
+        # Clean folders
         # Performs the copying to every desired location:
         for destination_path in destination_paths:
             if destination_path.endswith("/"):
