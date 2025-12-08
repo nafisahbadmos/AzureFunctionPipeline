@@ -177,7 +177,7 @@ def process_new_blob(
 ):
     """
     Copies blob into desired locatons. Usually for CSV files
-    provided for SF and Qx.
+    arriving into the source container.
 
     :param azeventgrid: Event details for extracting info about file
     :type azeventgrid: func.EventGridEvent
@@ -312,7 +312,7 @@ def NewBlobCreatedLCC(azeventgrid: func.EventGridEvent):
             env_var_prefix=env_var_prefix,
             env_var_dest_id=env_var_dest_id,
             # expected_destination_filename=None
-            expected_destination_filename="CYPRiskFactors_LCC.csv",
+            expected_destination_filename="destination_file_name.csv",
         )
 
 
