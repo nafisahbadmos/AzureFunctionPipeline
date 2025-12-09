@@ -7,8 +7,6 @@ This Azure Function App consists of multiple Azure Functions that process files 
 
 ## Architecture
 
-## Architecture
-
 ![Event-driven data pipeline with Azure Functions](images/devpipeline.drawio.png)
 
 * Event-driven(no manual triggering)
@@ -96,6 +94,6 @@ To clarify: an Apache Parquet **file** created by Apache Spark is represented by
 ## My Contribution
 
 - Implemented the Azure Function logic in Python
-- Configured Event Grid → Function → ADF pipeline trigger
+- Configured Event Grid → Function → Pipeline trigger
 - Set up env vars, RBAC (Data Factory Contributor, Storage Blob Data Contributor) and networking configuration
 - Documented deployment steps for repeatable use
