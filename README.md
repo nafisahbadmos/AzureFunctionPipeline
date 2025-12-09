@@ -7,10 +7,14 @@ This Azure Function App consists of multiple Azure Functions that process files 
 
 ## Architecture
 
-** Event-driven(no manual triggering)
-** Uses managed identity, not connection strings
-** Handles csv, parquet files and ADF pipeline
-** Designed for healthcare-style EL scenarios but adaptable to any sector
+## Architecture
+
+![Event-driven data pipeline with Azure Functions](images/devpipeline.drawio.png)
+
+* Event-driven(no manual triggering)
+* Uses app registration
+* Handles csv, parquet files and ADF pipeline
+* Designed for healthcare-style EL scenarios but adaptable to any sector
 
 ## Quickstart
 
@@ -22,8 +26,6 @@ Prereqs:
 - Azure Function App
 - VS Code Azure Functions extension
 
-How to use this code
-Clone repo -> Set env vars-> Deploy -> -> Create Event Grid Subscription
 
 ## How to deploy the Azure Function
 1. Create a `Function App` in Azure using the `Flex Consumption` plan.
