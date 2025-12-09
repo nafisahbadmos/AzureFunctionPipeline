@@ -2,10 +2,28 @@
 Author: David Salac, Nafisah Badmos, University of Liverpool
 
 ## Purpose
-This Azure Function App consists of multiple Azure Functions that process arriving data.
-The purpose of one Azure Function is to trigger a data pipeline within Azure Data Factory (ADF) when a new file is uploaded. Practically, it's helpful for programmatic automation of pipeline runs when a new file arrives in the landing zone (such as a zipped RiO backup file).
-Some Azure Functions copy CSV files from required locations into various other locations.
-The remaining ones are responsible for copying Apache Parquet files to required locations (EL pipeline).
+This Azure Function App consists of multiple Azure Functions that process files when they land in Blob Storage. The files could be CSV, Apache Parquet or SQL BAK files. Depending on the type of file, the right function is triggered to perform the task of either copying files to the right destination or trigger an ADF pipeline.
+
+
+## Architecture
+
+** Event-driven(no manual triggering)
+** Uses managed identity, not connection strings
+** Handles csv, parquet files and ADF pipeline
+** Designed for healthcare-style EL scenarios but adaptable to any sector
+
+## Quickstart
+
+Prereqs:
+- Azure subscription
+- ADF instance
+- Storage Accounts
+- Python 3.12
+- Azure Function App
+- VS Code Azure Functions extension
+
+How to use this code
+Clone repo -> Set env vars-> Deploy -> -> Create Event Grid Subscription
 
 ## How to deploy the Azure Function
 1. Create a `Function App` in Azure using the `Flex Consumption` plan.
@@ -72,3 +90,10 @@ To clarify: an Apache Parquet **file** created by Apache Spark is represented by
 1. Assign the `Data Factory Contributor` role to the function's App Registration at the Azure Data Factory (ADF) level.
 2. Assign the `Storage Blob Data Contributor` role to the function's App Registration at the Storage Account level.
 3. Add a Virtual Network (VNET) exception for the function's VNET within all related Storage Account containers.
+
+## My Contribution
+
+- Implemented the Azure Function logic in Python
+- Configured Event Grid → Function → ADF pipeline trigger
+- Set up env vars, RBAC (Data Factory Contributor, Storage Blob Data Contributor) and networking configuration
+- Documented deployment steps for repeatable use
